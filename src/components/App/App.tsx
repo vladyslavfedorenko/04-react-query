@@ -1,5 +1,5 @@
 // src/components/App/App.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate";
 import { Toaster, toast } from "react-hot-toast";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
@@ -23,8 +23,8 @@ export default function App() {
   const { data, isLoading, isError } = useQuery<SearchMoviesResponse>({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
-    enabled: query.trim().length > 0, // запрос только когда есть строка поиска
-    // v5: вместо remove keepPreviousData — используем placeholderData-хелпер
+    enabled: query.trim().length > 0,
+    // v5: вместо keepPreviousData — хелпер
     placeholderData: keepPreviousData,
   });
 
@@ -33,13 +33,15 @@ export default function App() {
 
   const handleSearch = (q: string) => {
     setQuery(q);
-    setPage(1); // при новом поиске возвращаемся на первую страницу
+    setPage(1); // при новом поиске — на первую страницу
   };
 
-  // Тост, если результаты пустые (и при этом уже не грузится и нет ошибки)
-  if (!isLoading && !isError && query && movies.length === 0) {
-    toast("No movies found for your request.");
-  }
+  // ✅ Показываем тост ТОЛЬКО как эффект, когда пришли пустые результаты
+  useEffect(() => {
+    if (!isLoading && !isError && query && movies.length === 0) {
+      toast("No movies found for your request.");
+    }
+  }, [query, movies.length, isLoading, isError]);
 
   return (
     <div className={css.app}>
